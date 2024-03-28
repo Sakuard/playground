@@ -7,7 +7,7 @@ app.use(express.json());
 
 const { Worker } = require('worker_threads');
 const WorkerPool = require('./workersPool.js');
-const pool = new WorkerPool(10);
+const pool = new WorkerPool(4);
 
 // 簡單的 Fibonacci 計算函數（遞迴）
 function fibonacci(n) {
@@ -102,10 +102,12 @@ app.get('/sys/iotasks', async (req, res) => {
 app.get('/sys/iotasks/workerpools', async (req, res) => {
     // console.log(`hit IO`)
     const task = {
-        dir: './output',  // 指定目录
-        // dir: 'X:\\2.5 總管理處\\2.5.2 管理部\\2.5.2.4 資管課\\2.5.2.4.0 個人資料夾\\Matt\\測試資料\\output',  // 指定目录
-        filename: uuidv4(),  // 文件名
-        size: 1024 * 1024 * 100  // 文件大小
+        taskname: 'genFiles',
+        params: {
+            dir: './output',  // 指定目录
+            filename: uuidv4(),  // 文件名
+            size: 1024 * 1024 * 100  // 文件大小
+        }
     };
     pool.runTask(task)
         .then(({ success, message }) => {
@@ -119,6 +121,27 @@ app.get('/sys/iotasks/workerpools', async (req, res) => {
             res.status(500).json({ error: err.message });
         });
 });
+app.get('/sys/cputasks', async (req, res) => {
+    const task = {
+        param: 45
+    }
+    let result = fibonacci(task.param);
+    res.json({ result });
+})
+app.get('/sys/cputasks/workerpools', async (req, res) => {
+    console.log(`hit CPU task`)
+    const task = {
+        taskname: 'fibonacci',
+        params: 45
+    };
+    pool.runTask(task)
+        .then( result => {
+            res.json({ result });
+        })
+        .catch(err => {
+            res.status(500).json({ error: err.message });
+        });
+})
 
 app.listen(3333, () => {
     console.log(`Server Happily Running on 3333!`)
